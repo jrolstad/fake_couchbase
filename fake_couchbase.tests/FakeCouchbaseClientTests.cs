@@ -174,5 +174,78 @@ namespace fake_couchbase.tests
             Assert.That(result.Success, Is.False);
             Assert.That(result.StatusCode, Is.EqualTo((int)StatusCode.KeyNotFound));
         }
+
+        [Test]
+        public void Get_Keys_ReturnsMatchingKeys()
+        {
+            // Arrange
+            var client = new FakeCouchbaseClient();
+
+            client.ExecuteStore(StoreMode.Add, "key1", "my_value1");
+            client.ExecuteStore(StoreMode.Add, "key2", "my_value2");
+            client.ExecuteStore(StoreMode.Add, "key3", "my_value3");
+
+            // Act
+            var result = client.Get(new[] {"key1", "key3"});
+
+            // Assert
+            Assert.That(result.Count,Is.EqualTo(2));
+            Assert.That(result["key1"],Is.EqualTo("my_value1"));
+            Assert.That(result["key3"],Is.EqualTo("my_value3"));
+        }
+
+        [Test]
+        public void Get_ObjectNonExistent_ReturnsDefaultValue()
+        {
+            // Arrange
+            var client = new FakeCouchbaseClient();
+
+            // Act
+            var result = client.Get("some_key");
+
+            // Assert
+            Assert.That(result, Is.Null);
+        }
+
+        [Test]
+        public void Get_StringNonExistent_ReturnsDefaultValue()
+        {
+            // Arrange
+            var client = new FakeCouchbaseClient();
+
+            // Act
+            var result = client.Get<string>("some_key");
+
+            // Assert
+            Assert.That(result, Is.Null);
+        }
+
+        [Test]
+        public void Get_Object_ReturnsValue()
+        {
+            // Arrange
+            var client = new FakeCouchbaseClient();
+            client.Store(StoreMode.Add, "some_key", "my value");
+
+            // Act
+            var result = client.Get("some_key");
+
+            // Assert
+            Assert.That(result, Is.EqualTo("my value"));
+        }
+
+        [Test]
+        public void Get_String_ReturnsValue()
+        {
+            // Arrange
+            var client = new FakeCouchbaseClient();
+            client.Store(StoreMode.Add, "some_key", "my value");
+
+            // Act
+            var result = client.Get<string>("some_key");
+
+            // Assert
+            Assert.That(result, Is.EqualTo("my value"));
+        }
     }
 }

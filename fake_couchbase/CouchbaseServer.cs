@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace fake_couchbase
 {
@@ -31,6 +33,22 @@ namespace fake_couchbase
         public object GetItem(string key)
         {
             return BucketValues[key];
+        }
+
+        public IDictionary<string,object> GetItem(IEnumerable<string> keys)
+        {
+            var values = BucketValues
+                .ToArray()
+                .Where(item => keys.Contains(item.Key))
+                .ToDictionary(item => item.Key, item => item.Value);
+
+            return values;
+        }
+
+        public void RemoveItem(string key)
+        {
+            object value;
+            BucketValues.TryRemove(key, out value);
         }
     }
 

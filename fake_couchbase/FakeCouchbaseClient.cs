@@ -30,13 +30,16 @@ namespace fake_couchbase
 
         public object Get(string key)
         {
-            var value = _server.GetItem(key);
+            var value = Get<object>(key);
 
             return value;
         }
 
         public T Get<T>(string key)
         {
+            if (!_server.ItemExists(key))
+                return default(T);
+
             var value = (T) _server.GetItem(key);
 
             return value;
@@ -44,12 +47,22 @@ namespace fake_couchbase
 
         public IDictionary<string, object> Get(IEnumerable<string> keys)
         {
-            throw new NotImplementedException();
+            var values = _server.GetItem(keys);
+
+            return values;
         }
 
         public bool TryGet(string key, out object value)
         {
-            throw new NotImplementedException();
+            if (!_server.ItemExists(key))
+            {
+                value = null;
+                return false;
+            }
+
+            value = _server.GetItem(key);
+            return true;
+
         }
 
         public bool TryGetWithCas(string key, out CasResult<object> value)
@@ -94,17 +107,23 @@ namespace fake_couchbase
 
         public bool Store(StoreMode mode, string key, object value)
         {
-            throw new NotImplementedException();
+            var result = ExecuteStore(mode, key, value);
+
+            return result.Success;
         }
 
         public bool Store(StoreMode mode, string key, object value, DateTime expiresAt)
         {
-            throw new NotImplementedException();
+            var result = ExecuteStore(mode, key, value);
+
+            return result.Success;
         }
 
         public bool Store(StoreMode mode, string key, object value, TimeSpan validFor)
         {
-            throw new NotImplementedException();
+            var result = ExecuteStore(mode, key, value);
+
+            return result.Success;
         }
 
         public CasResult<bool> Cas(StoreMode mode, string key, object value)
@@ -189,12 +208,16 @@ namespace fake_couchbase
 
         public bool Remove(string key)
         {
-            throw new NotImplementedException();
+            var result = ExecuteRemove(key);
+
+            return result.Success;
         }
 
         public bool Remove(string key, ulong cas)
         {
-            throw new NotImplementedException();
+            var result = ExecuteRemove(key, cas);
+
+            return result.Success;
         }
 
         public void FlushAll()
@@ -410,27 +433,33 @@ namespace fake_couchbase
 
         public IRemoveOperationResult ExecuteRemove(string key)
         {
-            throw new NotImplementedException();
+            if (!_server.ItemExists(key))
+            {
+                return new RemoveOperationResult {Success = false, StatusCode = (int) StatusCode.KeyNotFound};
+            }
+
+            _server.RemoveItem(key);
+            return new RemoveOperationResult {Success = true, StatusCode = (int) StatusCode.Success};
         }
 
         public IRemoveOperationResult ExecuteRemove(string key, ulong cas)
         {
-            throw new NotImplementedException();
+            return ExecuteRemove(key);
         }
 
         public IGetOperationResult ExecuteGet(string key, DateTime newExpiration)
         {
-            throw new NotImplementedException();
+            return ExecuteGet(key);
         }
 
         public IGetOperationResult<T> ExecuteGet<T>(string key, DateTime newExpiration)
         {
-            throw new NotImplementedException();
+            return ExecuteGet<T>(key);
         }
 
         public IGetOperationResult ExecuteTryGet(string key, DateTime newExpiration, out object value)
         {
-            throw new NotImplementedException();
+            return ExecuteTryGet(key, out value);
         }
 
         public IGetOperationResult ExecuteGetWithLock(string key)
@@ -509,17 +538,17 @@ namespace fake_couchbase
 
         public IRemoveOperationResult ExecuteRemove(string key, PersistTo persisTo, ReplicateTo replicateTo)
         {
-            throw new NotImplementedException();
+            return ExecuteRemove(key);
         }
 
         public IRemoveOperationResult ExecuteRemove(string key, PersistTo persisTo)
         {
-            throw new NotImplementedException();
+            return ExecuteRemove(key);
         }
 
         public IRemoveOperationResult ExecuteRemove(string key, ReplicateTo replicateTo)
         {
-            throw new NotImplementedException();
+            return ExecuteRemove(key);
         }
 
         public IObserveOperationResult Observe(string key, ulong cas, PersistTo persistTo, ReplicateTo replicateTo,
@@ -530,12 +559,17 @@ namespace fake_couchbase
 
         public object Get(string key, DateTime newExpiration)
         {
-            throw new NotImplementedException();
+            var result = ExecuteGet(key);
+
+            return result.Value;
+
         }
 
         public T Get<T>(string key, DateTime newExpiration)
         {
-            throw new NotImplementedException();
+            var result = ExecuteGet<T>(key);
+
+            return result.Value;
         }
 
         public CasResult<object> GetWithLock(string key)
@@ -600,7 +634,9 @@ namespace fake_couchbase
 
         public bool TryGet(string key, DateTime newExpiration, out object value)
         {
-            throw new NotImplementedException();
+            var result = ExecuteTryGet(key, out value);
+
+            return result.Success;
         }
 
         public bool TryGetWithCas(string key, DateTime newExpiration, out CasResult<object> value)
@@ -640,12 +676,12 @@ namespace fake_couchbase
 
         public bool KeyExists(string key)
         {
-            throw new NotImplementedException();
+            return _server.ItemExists(key);
         }
 
         public bool KeyExists(string key, ulong cas)
         {
-            throw new NotImplementedException();
+            return _server.ItemExists(key);
         }
     }
 }
