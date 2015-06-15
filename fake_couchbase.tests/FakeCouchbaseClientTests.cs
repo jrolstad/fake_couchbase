@@ -247,5 +247,61 @@ namespace fake_couchbase.tests
             // Assert
             Assert.That(result, Is.EqualTo("my value"));
         }
+
+        [Test]
+        public void ExecuteRemove_ExistingItem_ReturnsSuccess()
+        {
+            // Arrange
+            var client = new FakeCouchbaseClient();
+            client.Store(StoreMode.Add, "my_key", "some value");
+
+            // Act
+            var result = client.ExecuteRemove("my_key");
+
+            // Assert
+            Assert.That(result.Success, Is.True);
+            Assert.That(result.StatusCode, Is.EqualTo((int)StatusCode.Success));
+        }
+
+        [Test]
+        public void ExecuteRemove_NonExistingItem_ReturnsKeyNotFoundFailure()
+        {
+            // Arrange
+            var client = new FakeCouchbaseClient();
+
+            // Act
+            var result = client.ExecuteRemove("my_key");
+
+            // Assert
+            Assert.That(result.Success, Is.False);
+            Assert.That(result.StatusCode, Is.EqualTo((int)StatusCode.KeyNotFound));
+        }
+
+        [Test]
+        public void Remove_ExistingItem_ReturnsSuccess()
+        {
+            // Arrange
+            var client = new FakeCouchbaseClient();
+            client.Store(StoreMode.Add, "my_key", "some value");
+
+            // Act
+            var result = client.Remove("my_key");
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public void Remove_NonExistingItem_ReturnsKeyNotFoundFailure()
+        {
+            // Arrange
+            var client = new FakeCouchbaseClient();
+
+            // Act
+            var result = client.Remove("my_key");
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
     }
 }
