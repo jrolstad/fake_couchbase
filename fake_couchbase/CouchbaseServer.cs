@@ -34,17 +34,17 @@ namespace fake_couchbase
             });
         }
 
-        public object GetItem(string key)
+        public BucketItem GetItem(string key)
         {
-            return BucketValues[key].Value;
+            return BucketValues[key];
         }
 
-        public IDictionary<string,object> GetItem(IEnumerable<string> keys)
+        public IDictionary<string,object> GetItem(IEnumerable<string> keys, DateTime currentDateTime)
         {
             var values = BucketValues
                 .ToArray()
                 .Where(item => keys.Contains(item.Key))
-                .Where(item => item.Value.Expiration == null || item.Value.Expiration > DateTime.Now)
+                .Where(item => item.Value.Expiration == null || item.Value.Expiration > currentDateTime)
                 .ToDictionary(item => item.Key, item => item.Value.Value);
 
             return values;
@@ -55,6 +55,8 @@ namespace fake_couchbase
             BucketItem value;
             BucketValues.TryRemove(key, out value);
         }
+
+
     }
 
     public class BucketItem
@@ -68,6 +70,7 @@ namespace fake_couchbase
 
         public DateTime? Expiration { get; set; }
     }
+
 
     
 }

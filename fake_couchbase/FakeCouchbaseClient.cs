@@ -55,14 +55,19 @@ namespace fake_couchbase
             if (!_server.ItemExists(key))
                 return default(T);
 
-            var value = (T) _server.GetItem(key);
+            var bucketItem =_server.GetItem(key);
+
+            if(bucketItem.Expiration.HasValue && bucketItem.Expiration < CurrentDateTime)
+                return default(T);
+
+            var value = (T) bucketItem.Value;
 
             return value;
         }
 
         public IDictionary<string, object> Get(IEnumerable<string> keys)
         {
-            var values = _server.GetItem(keys);
+            var values = _server.GetItem(keys,this.CurrentDateTime);
 
             return values;
         }
@@ -75,7 +80,15 @@ namespace fake_couchbase
                 return false;
             }
 
-            value = _server.GetItem(key);
+            var bucketItem = _server.GetItem(key);
+
+            if (bucketItem.Expiration.HasValue && bucketItem.Expiration < CurrentDateTime)
+            {
+                value = null;
+                return false;
+            }
+
+            value = bucketItem.Value;
             return true;
 
         }
@@ -284,7 +297,18 @@ namespace fake_couchbase
                 };
             }
 
-            var value = (T) _server.GetItem(key);
+            var bucketItem = _server.GetItem(key);
+
+            if (bucketItem.Expiration.HasValue && bucketItem.Expiration < CurrentDateTime)
+            {
+                return new GetOperationResult<T>
+                {
+                    Success = false,
+                    StatusCode = (int)StatusCode.KeyNotFound
+                };
+            }
+
+            var value = (T) bucketItem.Value;
             return new GetOperationResult<T>
             {
                 Success = true,
