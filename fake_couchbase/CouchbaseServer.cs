@@ -30,7 +30,7 @@ namespace fake_couchbase
 
         public object GetItem(string key)
         {
-            throw new NotImplementedException();
+            return BucketValues[key];
         }
     }
 

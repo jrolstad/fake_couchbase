@@ -30,12 +30,16 @@ namespace fake_couchbase
 
         public object Get(string key)
         {
-            throw new NotImplementedException();
+            var value = _server.GetItem(key);
+
+            return value;
         }
 
         public T Get<T>(string key)
         {
-            throw new NotImplementedException();
+            var value = (T) _server.GetItem(key);
+
+            return value;
         }
 
         public IDictionary<string, object> Get(IEnumerable<string> keys)
