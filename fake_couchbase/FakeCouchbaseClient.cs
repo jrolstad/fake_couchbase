@@ -624,12 +624,12 @@ namespace fake_couchbase
 
         public void Touch(string key, DateTime nextExpiration)
         {
-            throw new NotImplementedException();
+           // No-Op
         }
 
         public void Touch(string key, TimeSpan nextExpiration)
         {
-            throw new NotImplementedException();
+            // No-Op
         }
 
         public bool TryGet(string key, DateTime newExpiration, out object value)
