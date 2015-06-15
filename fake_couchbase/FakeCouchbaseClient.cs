@@ -18,6 +18,7 @@ namespace fake_couchbase
         {
             
         }
+
         public FakeCouchbaseClient(CouchbaseServer server)
         {
             _server = server;
@@ -26,6 +27,20 @@ namespace fake_couchbase
         public void Dispose()
         {
             
+        }
+
+        private DateTime? _now;
+        public DateTime CurrentDateTime
+        {
+            get { return _now ?? DateTime.Now; }
+            private set { _now = value; }
+        }
+
+        public FakeCouchbaseClient WithCurrentTime(DateTime instant)
+        {
+            CurrentDateTime = instant;
+
+            return this;
         }
 
         public object Get(string key)
@@ -107,21 +122,22 @@ namespace fake_couchbase
 
         public bool Store(StoreMode mode, string key, object value)
         {
-            var result = ExecuteStore(mode, key, value);
+            var result = ExecuteStoreInternal(mode, key, value);
 
             return result.Success;
         }
 
         public bool Store(StoreMode mode, string key, object value, DateTime expiresAt)
         {
-            var result = ExecuteStore(mode, key, value);
+            var result = ExecuteStoreInternal(mode, key, value,expiresAt);
 
             return result.Success;
         }
 
         public bool Store(StoreMode mode, string key, object value, TimeSpan validFor)
         {
-            var result = ExecuteStore(mode, key, value);
+            var expiresAt = this.CurrentDateTime.Add(validFor);
+            var result = ExecuteStoreInternal(mode, key, value, expiresAt);
 
             return result.Success;
         }
@@ -293,29 +309,34 @@ namespace fake_couchbase
 
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value)
         {
+            return ExecuteStoreInternal(mode, key, value);
+        }
+
+        private IStoreOperationResult ExecuteStoreInternal(StoreMode mode, string key, object value, DateTime? expiresAt=null)
+        {
             switch (mode)
             {
                 case StoreMode.Add:
-                {
-                    if (_server.ItemExists(key))
-                        return new StoreOperationResult {Success = false, StatusCode = (int) StatusCode.KeyExists};
-                    
-                    _server.AddItem(key,value);
-                    return new StoreOperationResult {StatusCode = (int) StatusCode.Success, Success = true};
-                }
-                case StoreMode.Set:
-                {
-                    _server.UpdateItem(key, value);
-                    return new StoreOperationResult { StatusCode = (int) StatusCode.Success, Success = true };
-                }
-                case StoreMode.Replace:
-                {
-                    if (!_server.ItemExists(key))
-                        return new StoreOperationResult { Success = false, StatusCode = (int) StatusCode.KeyNotFound};
+                    {
+                        if (_server.ItemExists(key))
+                            return new StoreOperationResult { Success = false, StatusCode = (int)StatusCode.KeyExists };
 
-                    _server.UpdateItem(key, value);
-                    return new StoreOperationResult { StatusCode = (int) StatusCode.Success, Success = true };
-                }
+                        _server.AddItem(key, value,expiresAt);
+                        return new StoreOperationResult { StatusCode = (int)StatusCode.Success, Success = true };
+                    }
+                case StoreMode.Set:
+                    {
+                        _server.UpdateItem(key, value, expiresAt);
+                        return new StoreOperationResult { StatusCode = (int)StatusCode.Success, Success = true };
+                    }
+                case StoreMode.Replace:
+                    {
+                        if (!_server.ItemExists(key))
+                            return new StoreOperationResult { Success = false, StatusCode = (int)StatusCode.KeyNotFound };
+
+                        _server.UpdateItem(key, value, expiresAt);
+                        return new StoreOperationResult { StatusCode = (int)StatusCode.Success, Success = true };
+                    }
             }
 
             return new StoreOperationResult();
@@ -323,12 +344,13 @@ namespace fake_couchbase
 
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, DateTime expiresAt)
         {
-            return ExecuteStore(mode, key, value);
+            return ExecuteStoreInternal(mode, key, value, expiresAt);
         }
 
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, TimeSpan validFor)
         {
-            return ExecuteStore(mode, key, value);
+            var expiresAt = this.CurrentDateTime.Add(validFor);
+            return ExecuteStoreInternal(mode, key, value, expiresAt);
         }
 
         public IStoreOperationResult ExecuteCas(StoreMode mode, string key, object value)
@@ -490,50 +512,52 @@ namespace fake_couchbase
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, PersistTo persistTo,
             ReplicateTo replicateTo)
         {
-            return ExecuteStore(mode, key, value);
+            return ExecuteStoreInternal(mode, key, value);
         }
 
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, ReplicateTo replicateTo)
         {
-            return ExecuteStore(mode, key, value);
+            return ExecuteStoreInternal(mode, key, value);
         }
 
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, PersistTo persistTo)
         {
-            return ExecuteStore(mode, key, value);
+            return ExecuteStoreInternal(mode, key, value);
         }
 
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, DateTime expiresAt, PersistTo persistTo,
             ReplicateTo replicateTo)
         {
-            return ExecuteStore(mode, key, value);
+            return ExecuteStoreInternal(mode, key, value,expiresAt);
         }
 
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, DateTime expiresAt, PersistTo persistTo)
         {
-            return ExecuteStore(mode, key, value);
+            return ExecuteStoreInternal(mode, key, value,expiresAt);
         }
 
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, DateTime expiresAt, ReplicateTo replicateTo)
         {
-            return ExecuteStore(mode, key, value);
+            return ExecuteStoreInternal(mode, key, value,expiresAt);
         }
 
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, TimeSpan validFor, PersistTo persistTo,
             ReplicateTo replicateTo)
         {
-
-            return ExecuteStore(mode, key, value);
+            var expiresAt = this.CurrentDateTime.Add(validFor);
+            return ExecuteStore(mode, key, value,expiresAt);
         }
 
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, TimeSpan validFor, PersistTo persistTo)
         {
-            return ExecuteStore(mode, key, value);
+            var expiresAt = this.CurrentDateTime.Add(validFor);
+            return ExecuteStore(mode, key, value, expiresAt);
         }
         
         public IStoreOperationResult ExecuteStore(StoreMode mode, string key, object value, TimeSpan validFor, ReplicateTo replicateTo)
         {
-            return ExecuteStore(mode, key, value);
+            var expiresAt = this.CurrentDateTime.Add(validFor);
+            return ExecuteStore(mode, key, value, expiresAt);
         }
 
         public IRemoveOperationResult ExecuteRemove(string key, PersistTo persisTo, ReplicateTo replicateTo)
