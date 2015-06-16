@@ -303,5 +303,38 @@ namespace fake_couchbase.tests
             // Assert
             Assert.That(result, Is.False);
         }
+
+        [Test]
+        public void Touch_ExistingItem_UpdatesExpiration()
+        {
+            // Arrange
+            var server = new CouchbaseServer();
+            var client = new FakeCouchbaseClient(server);
+            client.Store(StoreMode.Add, "my_key", "some value");
+
+            var expiresAt = DateTime.Now.AddMinutes(3);
+
+            // Act
+            client.Touch("my_key", expiresAt);
+
+            // Assert
+            Assert.That(server.GetItem("my_key").Expiration, Is.EqualTo(expiresAt));
+        }
+
+        [Test]
+        public void Touch_NonExistingItem_DoesNothing()
+        {
+            // Arrange
+            var server = new CouchbaseServer();
+            var client = new FakeCouchbaseClient(server);
+
+            var expiresAt = DateTime.Now.AddMinutes(3);
+
+            // Act
+            client.Touch("my_key", expiresAt);
+
+            // Assert
+            Assert.That(server.ItemExists("my_key"), Is.False);
+        }
     }
 }

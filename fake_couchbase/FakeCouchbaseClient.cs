@@ -672,12 +672,17 @@ namespace fake_couchbase
 
         public void Touch(string key, DateTime nextExpiration)
         {
-           // No-Op
+            if (_server.ItemExists(key))
+            {
+                var item = _server.GetItem(key);
+                _server.UpdateItem(key,item.Value,nextExpiration);
+            }
         }
 
         public void Touch(string key, TimeSpan nextExpiration)
         {
-            // No-Op
+            var expiresAt = CurrentDateTime.Add(nextExpiration);
+            Touch(key,expiresAt);
         }
 
         public bool TryGet(string key, DateTime newExpiration, out object value)
